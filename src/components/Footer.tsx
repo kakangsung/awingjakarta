@@ -71,6 +71,9 @@ export default function Footer() {
           <p className="text-gray-500 text-sm">
             © 2024 Awing Jakarta. All rights reserved.
           </p>
+          <Link to="/admin/login" className="text-gray-600 text-xs hover:text-white transition-colors">
+            Admin Panel
+          </Link>
           <div className="flex gap-4">
             <span className="text-gray-500 text-xs">Pengiriman:</span>
             <span className="text-gray-400 text-xs font-medium">JNE</span>
