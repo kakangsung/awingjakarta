@@ -1,5 +1,22 @@
+# Dependencies
 node_modules/
-.next/
+
+# Build output
 dist/
-build/
-*.log
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vite cache
+.vite/
+# Backup folder lama
+backup/
