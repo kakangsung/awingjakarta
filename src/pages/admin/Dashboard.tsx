@@ -1,4 +1,4 @@
-import { Package, ShoppingCart, DollarSign, Clock, TrendingUp, Users } from 'lucide-react';
+import { Package, ShoppingCart, DollarSign, Clock, TrendingUp, Users, Upload } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
 import { Link } from 'react-router-dom';
 
@@ -124,6 +124,13 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h3 className="font-bold text-gray-800 mb-4">Aksi Cepat</h3>
             <div className="space-y-3">
+              <Link
+                to="/admin/products/import"
+                className="flex items-center gap-3 p-3 bg-gradient-to-r from-[#1a3f7a] to-[#2a5298] text-white rounded-xl hover:opacity-90 transition-opacity"
+              >
+                <Upload size={20} />
+                <span className="font-medium text-sm">Import Produk Massal</span>
+              </Link>
               <Link
                 to="/admin/products/new"
                 className="flex items-center gap-3 p-3 bg-[#1a3f7a] text-white rounded-xl hover:bg-[#15335f] transition-colors"

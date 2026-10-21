@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Edit, Trash2, Search, Filter } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, Upload } from 'lucide-react';
 import { useAdmin } from '../../context/AdminContext';
 
 export default function AdminProducts() {
@@ -34,13 +34,22 @@ export default function AdminProducts() {
           <h1 className="text-2xl font-bold text-gray-800">Kelola Produk</h1>
           <p className="text-gray-500 text-sm">{products.length} produk terdaftar</p>
         </div>
-        <Link
-          to="/admin/products/new"
-          className="inline-flex items-center gap-2 bg-[#1a3f7a] text-white px-5 py-3 rounded-xl font-medium hover:bg-[#15335f] transition-colors"
-        >
-          <Plus size={20} />
-          Tambah Produk
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            to="/admin/products/import"
+            className="inline-flex items-center gap-2 bg-white border-2 border-[#1a3f7a] text-[#1a3f7a] px-5 py-3 rounded-xl font-medium hover:bg-blue-50 transition-colors"
+          >
+            <Upload size={20} />
+            Import Massal
+          </Link>
+          <Link
+            to="/admin/products/new"
+            className="inline-flex items-center gap-2 bg-[#1a3f7a] text-white px-5 py-3 rounded-xl font-medium hover:bg-[#15335f] transition-colors"
+          >
+            <Plus size={20} />
+            Tambah Produk
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
