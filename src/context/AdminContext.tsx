@@ -12,6 +12,15 @@ interface Order {
   date: string;
 }
 
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  productCount: number;
+  icon: string;
+}
+
 interface AdminContextType {
   isAdmin: boolean;
   adminLogin: (password: string) => boolean;
@@ -22,6 +31,10 @@ interface AdminContextType {
   deleteProduct: (id: number) => void;
   orders: Order[];
   updateOrderStatus: (id: string, status: Order['status']) => void;
+  categories: Category[];
+  addCategory: (category: Omit<Category, 'id' | 'productCount'>) => void;
+  updateCategory: (id: number, category: Partial<Omit<Category, 'id' | 'productCount'>>) => void;
+  deleteCategory: (id: number) => void;
   stats: {
     totalProducts: number;
     totalOrders: number;
@@ -34,6 +47,13 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 const ADMIN_PASSWORD = 'admin123';
 
+const defaultCategories: Category[] = [
+  { id: 1, name: 'Polos', slug: 'polos', description: 'Songkok polos tanpa hiasan, simpel dan elegan', productCount: 2, icon: '⚫' },
+  { id: 2, name: 'Border', slug: 'border', description: 'Songkok dengan bordir premium yang elegan', productCount: 2, icon: '✨' },
+  { id: 3, name: 'Laser', slug: 'laser', description: 'Songkok dengan teknologi laser cutting presisi tinggi', productCount: 2, icon: '🔷' },
+  { id: 4, name: 'Susun', slug: 'susun', description: 'Songkok dengan desain susun klasik yang timeless', productCount: 2, icon: '🎭' },
+];
+
 function loadProducts(): Product[] {
   const saved = localStorage.getItem('awning_products');
   if (saved) {
@@ -44,6 +64,18 @@ function loadProducts(): Product[] {
     }
   }
   return initialProducts;
+}
+
+function loadCategories(): Category[] {
+  const saved = localStorage.getItem('awning_categories');
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return defaultCategories;
+    }
+  }
+  return defaultCategories;
 }
 
 function loadOrders(): Order[] {
@@ -106,6 +138,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   });
   const [products, setProducts] = useState<Product[]>(loadProducts);
   const [orders, setOrders] = useState<Order[]>(loadOrders);
+  const [categories, setCategories] = useState<Category[]>(loadCategories);
 
   useEffect(() => {
     localStorage.setItem('awning_products', JSON.stringify(products));
@@ -114,6 +147,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem('awning_orders', JSON.stringify(orders));
   }, [orders]);
+
+  useEffect(() => {
+    localStorage.setItem('awning_categories', JSON.stringify(categories));
+  }, [categories]);
 
   const adminLogin = (password: string): boolean => {
     if (password === ADMIN_PASSWORD) {
@@ -152,6 +189,24 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
   };
 
+  const addCategory = (category: Omit<Category, 'id' | 'productCount'>) => {
+    const newId = Math.max(...categories.map(c => c.id), 0) + 1;
+    const newCategory: Category = {
+      ...category,
+      id: newId,
+      productCount: 0,
+    };
+    setCategories(prev => [...prev, newCategory]);
+  };
+
+  const updateCategory = (id: number, updates: Partial<Omit<Category, 'id' | 'productCount'>>) => {
+    setCategories(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
+
+  const deleteCategory = (id: number) => {
+    setCategories(prev => prev.filter(c => c.id !== id));
+  };
+
   const stats = {
     totalProducts: products.length,
     totalOrders: orders.length,
@@ -163,7 +218,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     <AdminContext.Provider value={{
       isAdmin, adminLogin, adminLogout,
       products, addProduct, updateProduct, deleteProduct,
-      orders, updateOrderStatus, stats,
+      orders, updateOrderStatus,
+      categories, addCategory, updateCategory, deleteCategory,
+      stats,
     }}>
       {children}
     </AdminContext.Provider>
