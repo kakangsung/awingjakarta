@@ -4,7 +4,7 @@ import { Plus, Edit, Trash2, Tag, Package, ArrowLeft, Save, X } from 'lucide-rea
 import { useAdmin } from '../../context/AdminContext';
 
 interface Category {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   description: string;
@@ -12,11 +12,13 @@ interface Category {
   icon: string;
 }
 
+// Category interface now comes from AdminContext
+
 export default function AdminCategories() {
   const { categories, addCategory, updateCategory, deleteCategory } = useAdmin();
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -53,7 +55,7 @@ export default function AdminCategories() {
     setShowModal(false);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     deleteCategory(id);
     setDeleteConfirm(null);
   };
@@ -286,7 +288,7 @@ export default function AdminCategories() {
                 Batal
               </button>
               <button
-                onClick={() => handleDelete(deleteConfirm)}
+                onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
                 className="flex-1 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors"
               >
                 Hapus

@@ -1,5 +1,18 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Product, products as initialProducts } from '../data/products';
+import {
+  db,
+  subscribeToProducts,
+  addProductToFirestore,
+  updateProductInFirestore,
+  deleteProductFromFirestore,
+  subscribeToCategories,
+  addCategoryToFirestore,
+  updateCategoryInFirestore,
+  deleteCategoryFromFirestore,
+  subscribeToOrders,
+  updateOrderInFirestore,
+} from '../firebase/config';
 
 interface Order {
   id: string;
@@ -13,7 +26,7 @@ interface Order {
 }
 
 interface Category {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   description: string;
@@ -33,124 +46,53 @@ interface AdminContextType {
   updateOrderStatus: (id: string, status: Order['status']) => void;
   categories: Category[];
   addCategory: (category: Omit<Category, 'id' | 'productCount'>) => void;
-  updateCategory: (id: number, category: Partial<Omit<Category, 'id' | 'productCount'>>) => void;
-  deleteCategory: (id: number) => void;
+  updateCategory: (id: string, category: Partial<Omit<Category, 'id' | 'productCount'>>) => void;
+  deleteCategory: (id: string) => void;
   stats: {
     totalProducts: number;
     totalOrders: number;
     totalRevenue: number;
     pendingOrders: number;
   };
+  loading: boolean;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 const ADMIN_PASSWORD = 'admin123';
 
-const defaultCategories: Category[] = [
-  { id: 1, name: 'Polos', slug: 'polos', description: 'Songkok polos tanpa hiasan, simpel dan elegan', productCount: 2, icon: '⚫' },
-  { id: 2, name: 'Border', slug: 'border', description: 'Songkok dengan bordir premium yang elegan', productCount: 2, icon: '✨' },
-  { id: 3, name: 'Laser', slug: 'laser', description: 'Songkok dengan teknologi laser cutting presisi tinggi', productCount: 2, icon: '🔷' },
-  { id: 4, name: 'Susun', slug: 'susun', description: 'Songkok dengan desain susun klasik yang timeless', productCount: 2, icon: '🎭' },
-];
-
-function loadProducts(): Product[] {
-  const saved = localStorage.getItem('awning_products');
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch {
-      return initialProducts;
-    }
-  }
-  return initialProducts;
-}
-
-function loadCategories(): Category[] {
-  const saved = localStorage.getItem('awning_categories');
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch {
-      return defaultCategories;
-    }
-  }
-  return defaultCategories;
-}
-
-function loadOrders(): Order[] {
-  const saved = localStorage.getItem('awning_orders');
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch {
-      return [];
-    }
-  }
-  // Demo orders
-  return [
-    {
-      id: 'ORD-001234',
-      items: [{ product: initialProducts[0], quantity: 2, size: 7, height: 10 }],
-      total: 265000,
-      status: 'pending',
-      customer: { name: 'Ahmad Surya', email: 'ahmad@email.com', phone: '081234567890', address: 'Jl. Merdeka No. 10, Jakarta' },
-      shipping: 'jne',
-      payment: 'transfer',
-      date: '2024-12-15',
-    },
-    {
-      id: 'ORD-001235',
-      items: [{ product: initialProducts[1], quantity: 1, size: 8, height: 11 }],
-      total: 155000,
-      status: 'processing',
-      customer: { name: 'Budi Santoso', email: 'budi@email.com', phone: '082345678901', address: 'Jl. Sudirman No. 45, Bandung' },
-      shipping: 'jt',
-      payment: 'ewallet',
-      date: '2024-12-14',
-    },
-    {
-      id: 'ORD-001236',
-      items: [{ product: initialProducts[2], quantity: 3, size: 6, height: 9 }],
-      total: 495000,
-      status: 'shipped',
-      customer: { name: 'Hasan Malik', email: 'hasan@email.com', phone: '083456789012', address: 'Jl. Diponegoro No. 22, Surabaya' },
-      shipping: 'instant',
-      payment: 'cod',
-      date: '2024-12-13',
-    },
-    {
-      id: 'ORD-001237',
-      items: [{ product: initialProducts[3], quantity: 1, size: 9, height: 12 }],
-      total: 145000,
-      status: 'completed',
-      customer: { name: 'Rizki Pratama', email: 'rizki@email.com', phone: '084567890123', address: 'Jl. Gatot Subroto No. 8, Yogyakarta' },
-      shipping: 'jne',
-      payment: 'transfer',
-      date: '2024-12-10',
-    },
-  ];
-}
-
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(() => {
     return localStorage.getItem('awning_admin') === 'true';
   });
-  const [products, setProducts] = useState<Product[]>(loadProducts);
-  const [orders, setOrders] = useState<Order[]>(loadOrders);
-  const [categories, setCategories] = useState<Category[]>(loadCategories);
+  
+  // Firebase data states
+  const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // Subscribe to Firebase collections
   useEffect(() => {
-    localStorage.setItem('awning_products', JSON.stringify(products));
-  }, [products]);
+    const unsubscribeProducts = subscribeToProducts((productsData) => {
+      setProducts(productsData as Product[]);
+      setLoading(false);
+    });
 
-  useEffect(() => {
-    localStorage.setItem('awning_orders', JSON.stringify(orders));
-  }, [orders]);
+    const unsubscribeOrders = subscribeToOrders((ordersData) => {
+      setOrders(ordersData as Order[]);
+    });
 
-  useEffect(() => {
-    localStorage.setItem('awning_categories', JSON.stringify(categories));
-  }, [categories]);
+    const unsubscribeCategories = subscribeToCategories((categoriesData) => {
+      setCategories(categoriesData as Category[]);
+    });
+
+    return () => {
+      unsubscribeProducts();
+      unsubscribeOrders();
+      unsubscribeCategories();
+    };
+  }, []);
 
   const adminLogin = (password: string): boolean => {
     if (password === ADMIN_PASSWORD) {
@@ -166,51 +108,74 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('awning_admin');
   };
 
-  const addProduct = (product: Omit<Product, 'id' | 'rating' | 'reviews'>) => {
-    const newId = Math.max(...products.map(p => p.id), 0) + 1;
-    const newProduct: Product = {
-      ...product,
-      id: newId,
-      rating: 0,
-      reviews: 0,
-    };
-    setProducts(prev => [...prev, newProduct]);
+  const addProduct = async (product: Omit<Product, 'id' | 'rating' | 'reviews'>) => {
+    try {
+      await addProductToFirestore({
+        ...product,
+        rating: 0,
+        reviews: 0,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Error adding product:', error);
+    }
   };
 
-  const updateProduct = (id: number, updates: Partial<Product>) => {
-    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+  const updateProduct = async (id: number, updates: Partial<Product>) => {
+    try {
+      await updateProductInFirestore(String(id), updates);
+    } catch (error) {
+      console.error('Error updating product:', error);
+    }
   };
 
-  const deleteProduct = (id: number) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
+  const deleteProduct = async (id: number) => {
+    try {
+      await deleteProductFromFirestore(String(id));
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
   };
 
-  const updateOrderStatus = (id: string, status: Order['status']) => {
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+  const updateOrderStatus = async (id: string, status: Order['status']) => {
+    try {
+      await updateOrderInFirestore(id, { status });
+    } catch (error) {
+      console.error('Error updating order:', error);
+    }
   };
 
-  const addCategory = (category: Omit<Category, 'id' | 'productCount'>) => {
-    const newId = Math.max(...categories.map(c => c.id), 0) + 1;
-    const newCategory: Category = {
-      ...category,
-      id: newId,
-      productCount: 0,
-    };
-    setCategories(prev => [...prev, newCategory]);
+  const addCategory = async (category: Omit<Category, 'id' | 'productCount'>) => {
+    try {
+      await addCategoryToFirestore({
+        ...category,
+        productCount: 0,
+      });
+    } catch (error) {
+      console.error('Error adding category:', error);
+    }
   };
 
-  const updateCategory = (id: number, updates: Partial<Omit<Category, 'id' | 'productCount'>>) => {
-    setCategories(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+  const updateCategory = async (id: string, updates: Partial<Omit<Category, 'id' | 'productCount'>>) => {
+    try {
+      await updateCategoryInFirestore(id, updates);
+    } catch (error) {
+      console.error('Error updating category:', error);
+    }
   };
 
-  const deleteCategory = (id: number) => {
-    setCategories(prev => prev.filter(c => c.id !== id));
+  const deleteCategory = async (id: string) => {
+    try {
+      await deleteCategoryFromFirestore(id);
+    } catch (error) {
+      console.error('Error deleting category:', error);
+    }
   };
 
   const stats = {
     totalProducts: products.length,
     totalOrders: orders.length,
-    totalRevenue: orders.filter(o => o.status !== 'cancelled').reduce((sum, o) => sum + o.total, 0),
+    totalRevenue: orders.filter(o => o.status !== 'cancelled').reduce((sum, o) => sum + (o.total || 0), 0),
     pendingOrders: orders.filter(o => o.status === 'pending').length,
   };
 
@@ -221,6 +186,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       orders, updateOrderStatus,
       categories, addCategory, updateCategory, deleteCategory,
       stats,
+      loading,
     }}>
       {children}
     </AdminContext.Provider>
