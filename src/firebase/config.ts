@@ -2,13 +2,12 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, doc, setDoc, getDocs, updateDoc, deleteDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBNVFYuf6ecGzVTgeMUupuJwDGmOnQOup8",
-  authDomain: "kakangsung-fb4b3.firebaseapp.com",
-  projectId: "kakangsung-fb4b3",
-  storageBucket: "kakangsung-fb4b3.firebasestorage.app",
-  messagingSenderId: "165595537442",
-  appId: "1:165595537442:web:acd7bad4b168267bacaa7b",
-  measurementId: "G-1EJB6X8K97"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase

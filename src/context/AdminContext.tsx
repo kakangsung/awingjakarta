@@ -59,7 +59,7 @@ interface AdminContextType {
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
-const ADMIN_PASSWORD = 'admin321123';
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'defaultPassword';
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(() => {
